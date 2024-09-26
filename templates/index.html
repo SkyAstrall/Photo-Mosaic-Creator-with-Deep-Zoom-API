@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Mosaic Creator with Deep Zoom</title>
+    <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
+    
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            padding: 20px; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+        }
+        h1 { text-align: center; color: #333; }
+        form { 
+            max-width: 500px; 
+            margin: 0 auto; 
+            background: #f4f4f4; 
+            padding: 20px; 
+            border-radius: 8px; 
+        }
+        label { 
+            display: block; 
+            margin-top: 10px; 
+            font-weight: bold; 
+        }
+        input, select { 
+            width: 100%; 
+            padding: 8px; 
+            margin-top: 5px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+        }
+        input[type="submit"] { 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            margin-top: 20px; 
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        #result { 
+            margin-top: 40px; 
+            text-align: center; 
+        }
+        #mosaicImage { 
+            max-width: 100%; 
+            height: auto; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #error { 
+            color: red; 
+            margin-top: 20px; 
+            text-align: center; 
+            font-weight: bold; 
+        }
+        #viewer {
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ddd;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Photo Mosaic Creator with Deep Zoom</h1>
+    <form id="mosaicForm" enctype="multipart/form-data">
+        <label for="main_photo">Main Photo:</label>
+        <input type="file" id="main_photo" name="main_photo" required>
+
+        <label for="collection_folder">Collection Folder:</label>
+        <input type="text" id="collection_folder" name="collection_folder" required>
+
+        <label for="size">Grid Size (e.g., 20 for a 20x20 grid):</label>
+        <input type="number" id="size" name="size" min="10" max="100" value="20" required>
+
+        <label for="distance">Distance (minimum cells between repeated images):</label>
+        <input type="number" id="distance" name="distance" min="1" max="100" value="10" required>
+
+        <label for="color_enhance">Color Enhance (0-1):</label>
+        <input type="number" id="color_enhance" name="color_enhance" min="0" max="1" step="0.1" value="0.5" required>
+
+        <label for="source_overlay">Source Overlay (0-1):</label>
+        <input type="number" id="source_overlay" name="source_overlay" min="0" max="1" step="0.1" value="0.3" required>
+
+        <label for="color_effect">Color Effect:</label>
+        <select id="color_effect" name="color_effect">
+            <option value="default">Default Source Color</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="sepia">Sepia</option>
+        </select>
+
+        <label for="render_type">Render Type:</label>
+        <select id="render_type" name="render_type">
+            <option value="full">Full Resolution</option>
+            <option value="medium">Medium (with watermark)</option>
+        </select>
+
+        <input type="submit" value="Create Mosaic">
+    </form>
+
+    <div id="error" style="display:none;"></div>
+
+    <div id="result" style="display:none;">
+        <h2>Mosaic Result:</h2>
+        <img id="mosaicImage" src="" alt="Mosaic Image">
+        <h3>Deep Zoom View:</h3>
+        <div id="viewer"></div>
+    </div>
+
+    <script>
+        let viewer;
+        
+        document.getElementById('mosaicForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('error').textContent = 'Error: ' + data.error;
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('result').style.display = 'none';
+                } else {
+                    document.getElementById('mosaicImage').src = data.mosaic_url;
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                    
+                    if (viewer) {
+                        viewer.destroy();
+                    }
+                    
+                    viewer = OpenSeadragon({
+                        id: "viewer",
+                        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+                        tileSources: data.deep_zoom_url
+                    });
+                    console.log("Deep Zoom URL: " + data.deep_zoom_url);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('error').textContent = 'An unexpected error occurred. Please try again.';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('result').style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

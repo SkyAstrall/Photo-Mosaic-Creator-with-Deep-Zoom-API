@@ -1,0 +1,38 @@
+# macOS system files
+.DS_Store
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+
+# Extra files and directories
+Extraass/
+
+# Static files (generated content)
+static/
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+
+# Compiled Python files
+*.pyc
+
+# Specific files and directories mentioned
+Extraass/mosaic V1/app_template.py
+Extraass/mosaic V1/templates/index.html
+Extraass/mosaic V2/app_template.py
+Extraass/mosaic V2/templates/index.html
+static/.DS_Store
