@@ -3,128 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Mosaic Creator with Deep Zoom</title>
-    <script src="https://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
-    
+    <title>Photo Mosaic Creator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/img-comparison-slider@7/dist/styles.css">
+    <script src="https://unpkg.com/img-comparison-slider@7/dist/index.js" defer></script>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            line-height: 1.6; 
-            padding: 20px; 
-            max-width: 1000px; 
-            margin: 0 auto; 
-        }
-        h1 { text-align: center; color: #333; }
-        form { 
-            max-width: 500px; 
-            margin: 0 auto; 
-            background: #f4f4f4; 
-            padding: 20px; 
-            border-radius: 8px; 
-        }
-        label { 
-            display: block; 
-            margin-top: 10px; 
-            font-weight: bold; 
-        }
-        input, select { 
-            width: 100%; 
-            padding: 8px; 
-            margin-top: 5px; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            box-sizing: border-box; 
-        }
-        input[type="submit"] { 
-            background-color: #4CAF50; 
-            color: white; 
-            border: none; 
-            padding: 10px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            margin-top: 20px; 
-        }
-        input[type="submit"]:hover {
-            background-color: #45a049;
-        }
-        #result { 
-            margin-top: 40px; 
-            text-align: center; 
-        }
-        #mosaicImage { 
-            max-width: 100%; 
-            height: auto; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #error { 
-            color: red; 
-            margin-top: 20px; 
-            text-align: center; 
-            font-weight: bold; 
-        }
         #viewer {
-            width: 800px;
-            height: 600px;
-            border: 1px solid #ddd;
-            margin: 20px auto;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ccc;
+        }
+        .comparison-slider {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+        .comparison-slider img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
-    <h1>Photo Mosaic Creator with Deep Zoom</h1>
-    <form id="mosaicForm" enctype="multipart/form-data">
-        <label for="main_photo">Main Photo:</label>
-        <input type="file" id="main_photo" name="main_photo" required>
-
-        <label for="collection_folder">Collection Folder:</label>
-        <input type="text" id="collection_folder" name="collection_folder" required>
-
-        <label for="size">Grid Size (e.g., 20 for a 20x20 grid):</label>
-        <input type="number" id="size" name="size" min="10" max="100" value="20" required>
-
-        <label for="distance">Distance (minimum cells between repeated images):</label>
-        <input type="number" id="distance" name="distance" min="1" max="100" value="10" required>
-
-        <label for="color_enhance">Color Enhance (0-1):</label>
-        <input type="number" id="color_enhance" name="color_enhance" min="0" max="1" step="0.1" value="0.5" required>
-
-        <label for="source_overlay">Source Overlay (0-1):</label>
-        <input type="number" id="source_overlay" name="source_overlay" min="0" max="1" step="0.1" value="0.3" required>
-
-        <label for="color_effect">Color Effect:</label>
-        <select id="color_effect" name="color_effect">
-            <option value="default">Default Source Color</option>
-            <option value="grayscale">Grayscale</option>
-            <option value="sepia">Sepia</option>
-        </select>
-
-        <label for="render_type">Render Type:</label>
-        <select id="render_type" name="render_type">
-            <option value="full">Full Resolution</option>
-            <option value="medium">Medium (with watermark)</option>
-        </select>
-
-        <input type="submit" value="Create Mosaic">
-    </form>
-
-    <div id="error" style="display:none;"></div>
-
-    <div id="result" style="display:none;">
-        <h2>Mosaic Result:</h2>
-        <img id="mosaicImage" src="" alt="Mosaic Image">
-        <h3>Deep Zoom View:</h3>
-        <div id="viewer"></div>
+    <div class="container my-4">
+        <h1 class="text-center mb-4">Photo Mosaic Creator</h1>
+        
+        <div class="card mb-4 rounded-3 shadow-sm">
+            <div class="card-body">
+                <form id="mosaicForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="mainPhoto" class="form-label">Main Photo:</label>
+                        <input type="file" class="form-control" id="mainPhoto" name="main_photo" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="collectionFolder" class="form-label">Collection Folder Path:</label>
+                        <input type="text" class="form-control" id="collectionFolder" name="collection_folder" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="colorEnhance" class="form-label">Color Enhance: <span id="colorEnhanceValue">50%</span></label>
+                        <input type="range" class="form-range" id="colorEnhance" name="color_enhance" min="0" max="80" value="50">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sourceOverlay" class="form-label">Source Overlay: <span id="sourceOverlayValue">40%</span></label>
+                        <input type="range" class="form-range" id="sourceOverlay" name="source_overlay" min="0" max="60" value="40">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cellDistance" class="form-label">Cell Distance: <span id="cellDistanceValue">5</span></label>
+                        <input type="range" class="form-range" id="cellDistance" name="distance" min="0" max="10" value="5">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Cell Size:</label>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="size" id="sizeSmall" value="small" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="sizeSmall">Small</label>
+                            
+                            <input type="radio" class="btn-check" name="size" id="sizeMedium" value="medium" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="sizeMedium">Medium</label>
+                            
+                            <input type="radio" class="btn-check" name="size" id="sizeBig" value="big" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="sizeBig">Big</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Color Effect:</label>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="color_effect" id="effectNormal" value="normal" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="effectNormal">Normal</label>
+                            
+                            <input type="radio" class="btn-check" name="color_effect" id="effectSepia" value="sepia" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="effectSepia">Sepia</label>
+                            
+                            <input type="radio" class="btn-check" name="color_effect" id="effectGrayscale" value="grayscale" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="effectGrayscale">Grayscale</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Watermark:</label>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="watermark" id="watermarkYes" value="true" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary" for="watermarkYes">With Watermark</label>
+                            
+                            <input type="radio" class="btn-check" name="watermark" id="watermarkNo" value="false" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="watermarkNo">Without Watermark</label>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">CREATE PHOTOMOSAIC</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="result" style="display:none;">
+            <h2 class="mt-4">Mosaic Result:</h2>
+            <div class="comparison-slider mb-4">
+                <img-comparison-slider>
+                    <img slot="before" id="originalImage" alt="Original Image" height="400" width="400">
+                    <img slot="after" id="mosaicImage" alt="Mosaic Image" height="400" width="400">
+                </img-comparison-slider>
+            </div>
+            <h3>Deep Zoom View:</h3>
+            <div id="viewer"></div>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
     <script>
-        let viewer;
-        
+        // Update range input values
+        document.querySelectorAll('input[type="range"]').forEach(input => {
+            input.addEventListener('input', function() {
+                document.getElementById(this.id + 'Value').textContent = this.value + (this.id === 'cellDistance' ? '' : '%');
+            });
+        });
+
+        // Form submission
         document.getElementById('mosaicForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            var formData = new FormData(this);
+            const formData = new FormData(this);
+            
             fetch('/', {
                 method: 'POST',
                 body: formData
@@ -132,31 +139,22 @@
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    document.getElementById('error').textContent = 'Error: ' + data.error;
-                    document.getElementById('error').style.display = 'block';
-                    document.getElementById('result').style.display = 'none';
+                    alert('Error: ' + data.error);
                 } else {
+                    document.getElementById('originalImage').src = data.original_url;
                     document.getElementById('mosaicImage').src = data.mosaic_url;
                     document.getElementById('result').style.display = 'block';
-                    document.getElementById('error').style.display = 'none';
                     
-                    if (viewer) {
-                        viewer.destroy();
-                    }
-                    
-                    viewer = OpenSeadragon({
+                    OpenSeadragon({
                         id: "viewer",
-                        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+                        prefixUrl: "https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/images/",
                         tileSources: data.deep_zoom_url
                     });
-                    console.log("Deep Zoom URL: " + data.deep_zoom_url);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                document.getElementById('error').textContent = 'An unexpected error occurred. Please try again.';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('result').style.display = 'none';
+                alert('An error occurred. Please try again.');
             });
         });
     </script>
