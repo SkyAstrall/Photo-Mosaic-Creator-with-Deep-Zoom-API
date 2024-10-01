@@ -12,11 +12,28 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from flask import Flask, request, render_template, send_file, jsonify
 
+from sklearn.metrics.pairwise import cosine_similarity
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from tensorflow.keras.preprocessing.image import img_to_array
+
 app = Flask(__name__)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Load pre-trained ResNet50 model
+model = ResNet50(weights="imagenet", include_top=False, pooling="avg")
+
+
+def extract_features(image):
+    """Extract features from an image using ResNet50."""
+    image = image.resize((224, 224))
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    image = preprocess_input(image)
+    features = model.predict(image)
+    return features.flatten()
 
 
 def get_average_color(image):
@@ -194,11 +211,13 @@ def create_photo_mosaic(
 
     logger.info("Processing collection images...")
     collection_images = []
+    collection_features = []
     for filename in os.listdir(collection_folder):
         if filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
             img = process_cell_image(os.path.join(collection_folder, filename))
             if img:
                 collection_images.append(img)
+                collection_features.append(extract_features(img))
     logger.info(f"Processed {len(collection_images)} collection images")
 
     if not collection_images:
@@ -211,31 +230,39 @@ def create_photo_mosaic(
     image_count = len(collection_images)
     logger.info(f"Total cells: {total_cells}, Available images: {image_count}")
 
-    # Adjust distance to work on a scale of 0-10
-    if distance == 0:
-        use_distance = False
-        image_cycle = image_count
-    else:
-        use_distance = True
-        image_cycle = min(image_count, max(1, int(image_count * (11 - distance) / 10)))
+    collection_features = np.array(collection_features)
 
-    logger.info(f"Using distance: {use_distance}, Image cycle: {image_cycle}")
+    # Initialize an array to keep track of the last used index for each image
+    last_used_index = np.full(image_count, -1)
 
     def process_cell(index):
         try:
             x = (index % grid_width) * cell_width
             y = (index // grid_width) * cell_height
             cell = main_array[y : y + cell_height, x : x + cell_width]
-            avg_color = tuple(int(x) for x in cell.mean(axis=(0, 1)))
+            cell_image = Image.fromarray(cell)
+            cell_features = extract_features(cell_image)
 
-            if use_distance:
-                image_index = index % image_cycle
-            else:
-                image_index = index % image_count
+            # Calculate semantic similarity
+            similarities = cosine_similarity([cell_features], collection_features)[0]
 
-            best_match = collection_images[image_index]
+            # Apply distance constraint
+            valid_indices = np.where(
+                index - last_used_index > distance * image_count // 10
+            )[0]
+            if len(valid_indices) == 0:
+                valid_indices = np.arange(image_count)
+
+            # Find the best match among valid indices
+            best_match_index = valid_indices[np.argmax(similarities[valid_indices])]
+
+            # Update last used index
+            last_used_index[best_match_index] = index
+
+            best_match = collection_images[best_match_index]
 
             if color_enhance > 0:
+                avg_color = tuple(map(int, np.mean(cell, axis=(0, 1))))
                 enhanced = Image.blend(
                     best_match,
                     Image.new("RGB", best_match.size, avg_color),
@@ -247,6 +274,7 @@ def create_photo_mosaic(
             return (x, y, enhanced.resize((cell_width, cell_height), Image.LANCZOS))
         except Exception as e:
             logger.error(f"Error processing cell {index}: {str(e)}")
+            avg_color = tuple(map(int, np.mean(cell, axis=(0, 1))))
             return (x, y, Image.new("RGB", (cell_width, cell_height), avg_color))
 
     logger.info("Starting cell processing...")
@@ -432,4 +460,4 @@ def cleanup_files():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5001)
